@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gravador de Vídeo Temporário</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      background-color: #121212;
+      color: #ffffff;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    video {
+      width: 100%;
+      max-width: 480px;
+      border-radius: 12px;
+      background-color: #000;
+      aspect-ratio: 9/16;
+      object-fit: cover;
+    }
+    .controls {
+      margin-top: 16px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    button {
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    #btnStart { background-color: #00c853; color: #fff; }
+    #btnStop { background-color: #d50000; color: #fff; }
+    #status {
+      margin-top: 16px;
+      font-size: 14px;
+      color: #aaa;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <video id="preview" autoplay muted playsinline></video>
+
+  <div class="controls">
+    <button id="btnStart">Iniciar Câmera e Gravação</button>
+    <button id="btnStop" disabled>Parar e Enviar</button>
+  </div>
+
+  <p id="status">Pressione o botão para liberar a câmera.</p>
+
+  <script>
+    // Cole aqui a URL de implantação gerada no Google Apps Script
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzNN7dXLIUIkluMZktduJ1CBijA3WrXjnoYauv1GuuODrd7m8kySbu2WtIPBD4RrnvYYg/exec";
+
+    const preview = document.getElementById('preview');
+    const btnStart = document.getElementById('btnStart');
+    const btnStop = document.getElementById('btnStop');
+    const statusText = document.getElementById('status');
+
+    let mediaStream = null;
+    let mediaRecorder = null;
+    let recordedChunks = [];
+
+    btnStart.addEventListener('click', async () => {
+      try {
+        statusText.textContent = "Solicitando permissão de câmera...";
+        
+        // Solicita câmera traseira preferencialmente em celulares
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user" },
+          audio: true
+        });
+
+        preview.srcObject = mediaStream;
+
+        recordedChunks = [];
+        const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
+          ? 'video/webm;codecs=vp9,opus'
+          : 'video/mp4';
+
+        mediaRecorder = new MediaRecorder(mediaStream, { mimeType });
+
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data && event.data.size > 0) {
+            recordedChunks.push(event.data);
+          }
+        };
+
+        mediaRecorder.onstop = uploadRecording;
+
+        mediaRecorder.start();
+        btnStart.disabled = true;
+        btnStop.disabled = false;
+        statusText.textContent = "Gravando vídeo...";
+
+      } catch (err) {
+        statusText.textContent = "Erro ao acessar câmera/microfone: " + err.message;
+      }
+    });
+
+    btnStop.addEventListener('click', () => {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        mediaStream.getTracks().forEach(track => track.stop()); // Desativa o LED da câmera
+        btnStop.disabled = true;
+        statusText.textContent = "Processando e enviando para o Drive...";
+      }
+    });
+
+    async function uploadRecording() {
+      const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType });
+      const reader = new FileReader();
+
+      reader.readAsDataURL(blob);
+      reader.onloadend = async () => {
+        const base64Data = reader.result.split(',')[1];
+        const payload = {
+          fileName: "gravacao_" + Date.now() + (mediaRecorder.mimeType.includes('mp4') ? '.mp4' : '.webm'),
+          mimeType: mediaRecorder.mimeType,
+          base64Data: base64Data
+        };
+
+        try {
+          const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+          });
+          const result = await response.json();
+
+          if (result.status === 'success') {
+            statusText.textContent = "Vídeo salvo com sucesso no Drive! Ele será excluído em 48 horas.";
+          } else {
+            statusText.textContent = "Falha no envio: " + result.message;
+          }
+        } catch (error) {
+          statusText.textContent = "Erro de conexão ao enviar: " + error.message;
+        } finally {
+          btnStart.disabled = false;
+        }
+      };
+    }
+  </script>
+</body>
+</html>
