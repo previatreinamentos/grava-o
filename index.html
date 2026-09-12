@@ -3,236 +3,245 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Upload de Fotos e Vídeos</title>
+  <title>Upload Rápido - Google Drive</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; }
     body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background-color: #0b1329;
-      color: #f8fafc;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      margin: 0;
-      padding: 16px;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: radial-gradient(circle at 50% 20%, #15213b 0%, #080d1a 100%);
     }
-    .card {
-      background-color: #17223b;
-      padding: 28px 24px;
-      border-radius: 20px;
-      width: 100%;
-      max-width: 420px;
-      text-align: center;
-      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
+    .custom-scrollbar::-webkit-scrollbar {
+      height: 4px;
     }
-    h2 { margin: 0; font-size: 22px; font-weight: 700; }
-    p.desc { font-size: 14px; color: #94a3b8; margin: 0; }
-    
-    .file-dropzone {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      border: 2px dashed #334155;
-      border-radius: 14px;
-      padding: 24px 16px;
-      cursor: pointer;
-      background-color: #0f172a;
-      transition: border-color 0.2s, background-color 0.2s;
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
     }
-    .file-dropzone:hover {
-      border-color: #38bdf8;
-      background-color: #131d33;
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
     }
-    .file-dropzone svg {
-      width: 42px;
-      height: 42px;
-      stroke: #94a3b8;
-      margin-bottom: 10px;
+    .anim-pulse-subtle {
+      animation: pulse-subtle 1.8s infinite ease-in-out;
     }
-    .file-dropzone span {
-      font-size: 14px;
-      color: #cbd5e1;
-      word-break: break-word;
-    }
-    input[type="file"] { display: none; }
-    
-    .btn {
-      width: 100%;
-      padding: 14px;
-      font-size: 16px;
-      font-weight: 600;
-      border: none;
-      border-radius: 10px;
-      background-color: #0284c7;
-      color: #fff;
-      cursor: pointer;
-      transition: background-color 0.2s, opacity 0.2s;
-    }
-    .btn:hover { background-color: #0369a1; }
-    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-    /* Barra de Progresso */
-    .progress-container {
-      display: none;
-      width: 100%;
-      background-color: #0f172a;
-      border-radius: 10px;
-      padding: 12px;
-      border: 1px solid #334155;
-      text-align: left;
-    }
-    .progress-header {
-      display: flex;
-      justify-content: space-between;
-      font-size: 13px;
-      color: #cbd5e1;
-      margin-bottom: 6px;
-    }
-    .progress-track {
-      width: 100%;
-      height: 10px;
-      background-color: #1e293b;
-      border-radius: 6px;
-      overflow: hidden;
-    }
-    .progress-bar {
-      width: 0%;
-      height: 100%;
-      background-color: #38bdf8;
-      border-radius: 6px;
-      transition: width 0.3s ease;
-    }
-    
-    #status {
-      font-size: 13px;
-      color: #94a3b8;
-      min-height: 18px;
-      word-break: break-word;
-    }
-
-    /* Caixa de resultado */
-    .result-box {
-      display: none;
-      padding: 14px;
-      background-color: #0f172a;
-      border-radius: 10px;
-      border: 1px solid #22c55e;
-      text-align: left;
-    }
-    .result-box label { font-size: 12px; color: #22c55e; font-weight: 700; }
-    .link-wrapper {
-      display: flex;
-      gap: 8px;
-      margin-top: 6px;
-    }
-    .link-wrapper input {
-      flex: 1;
-      padding: 8px;
-      font-size: 13px;
-      border-radius: 6px;
-      border: 1px solid #475569;
-      background-color: #1e293b;
-      color: #fff;
-      outline: none;
-    }
-    .copy-btn {
-      padding: 8px 12px;
-      font-size: 13px;
-      font-weight: 600;
-      border: none;
-      border-radius: 6px;
-      background-color: #0284c7;
-      color: #fff;
-      cursor: pointer;
-    }
-    .copy-btn:hover { background-color: #0369a1; }
   </style>
 </head>
-<body>
+<body class="min-h-screen text-slate-100 flex flex-col justify-center items-center p-3 sm:p-4 selection:bg-sky-500 selection:text-white">
 
-  <div class="card">
-    <h2>Enviar Foto ou Vídeo</h2>
-    <p class="desc">Envie um arquivo para gerar um link de acesso no Google Drive.</p>
+  <!-- Modal / Toast de Notificação (substituto nativo seguro para alert()) -->
+  <div id="toastBox" class="fixed top-4 z-50 transition-all duration-300 transform -translate-y-12 opacity-0 pointer-events-none flex items-center gap-2 bg-slate-900/95 border border-slate-700 text-slate-200 text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-2xl backdrop-blur-md max-w-sm">
+    <span id="toastIcon">⚠️</span>
+    <span id="toastMsg">Mensagem</span>
+  </div>
 
-    <!-- Dropzone de Arquivos -->
-    <label class="file-dropzone" for="fileInput">
-      <svg fill="none" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-      </svg>
-      <span id="labelTxt">Toque para selecionar da galeria ou câmera</span>
-    </label>
-    <input type="file" id="fileInput" accept="image/*,video/*">
-
-    <!-- Barra de Progresso Visual -->
-    <div class="progress-container" id="progressContainer">
-      <div class="progress-header">
-        <span id="progressStatus">Preparando...</span>
-        <span id="progressPercent">0%</span>
-      </div>
-      <div class="progress-track">
-        <div class="progress-bar" id="progressBar"></div>
+  <!-- Modal de Câmera Ao Vivo Integrada -->
+  <div id="cameraModal" class="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md hidden flex-col items-center justify-between p-4 sm:p-6 transition-opacity duration-300">
+    <!-- Barra Superior da Câmera -->
+    <div class="w-full max-w-md flex items-center justify-between z-10">
+      <span class="text-xs sm:text-sm font-semibold text-slate-200 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+        Câmera Ativa
+      </span>
+      <div class="flex items-center gap-2">
+        <!-- Botão Alternar Câmera Frontal/Traseira -->
+        <button id="btnFlipCamera" type="button" title="Alternar Câmera" class="p-2 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-300 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+        </button>
+        <!-- Botão Fechar -->
+        <button id="btnCloseCamera" type="button" class="p-2 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-300 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
       </div>
     </div>
 
-    <button class="btn" id="btnUpload" disabled>Enviar Arquivo</button>
-    <div id="status"></div>
+    <!-- Visor de Vídeo Central com Guias de Enquadramento -->
+    <div class="relative w-full max-w-md flex-1 my-3 flex items-center justify-center overflow-hidden rounded-2xl bg-black border border-slate-800">
+      <video id="videoCameraLive" autoplay playsinline muted class="w-full h-full object-cover"></video>
+      <canvas id="snapshotCanvas" class="hidden"></canvas>
+      
+      <!-- Flash Visual de Captura -->
+      <div id="shutterFlash" class="absolute inset-0 bg-white pointer-events-none opacity-0 transition-opacity duration-150"></div>
 
-    <!-- Bloco com Link Gerado -->
-    <div class="result-box" id="resultBox">
-      <label>LINK PÚBLICO GERADO:</label>
-      <div class="link-wrapper">
-        <input type="text" id="shareUrl" readonly>
-        <button class="copy-btn" id="btnCopy">Copiar</button>
+      <!-- Guias de Foco / Cantos -->
+      <div class="absolute inset-4 pointer-events-none border border-white/20 rounded-xl flex flex-col justify-between p-2">
+        <div class="flex justify-between">
+          <span class="w-4 h-4 border-t-2 border-l-2 border-emerald-400"></span>
+          <span class="w-4 h-4 border-t-2 border-r-2 border-emerald-400"></span>
+        </div>
+        <div class="flex justify-between">
+          <span class="w-4 h-4 border-b-2 border-l-2 border-emerald-400"></span>
+          <span class="w-4 h-4 border-b-2 border-r-2 border-emerald-400"></span>
+        </div>
       </div>
+    </div>
+
+    <!-- Botão Disparador (Obturador) -->
+    <div class="w-full max-w-md flex items-center justify-center pb-2 z-10">
+      <button id="btnCapturePhoto" type="button" class="group relative p-1 rounded-full border-4 border-white/80 active:scale-95 transition-transform">
+        <div class="w-14 h-14 rounded-full bg-emerald-500 group-hover:bg-emerald-400 transition-colors flex items-center justify-center text-white shadow-lg">
+          <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          </svg>
+        </div>
+      </button>
     </div>
   </div>
 
+  <!-- Card Principal Compacto -->
+  <main class="w-full max-w-[370px] bg-slate-900/90 border border-slate-800/80 rounded-2xl p-5 shadow-2xl backdrop-blur-sm flex flex-col gap-3.5 relative overflow-hidden">
+    
+    <!-- Cabeçalho simplificado sem necessidade de menu escondido -->
+    <header class="flex items-start justify-between gap-2">
+      <div class="text-left">
+        <h1 class="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-1.5">
+          <span>Enviar para o Drive</span>
+          <span class="inline-block w-2 h-2 rounded-full bg-emerald-400"></span>
+        </h1>
+        <p class="text-xs text-slate-400 mt-0.5">Tire foto ou envie mídia para gerar o link público.</p>
+      </div>
+    </header>
+
+    <!-- Grid com os Dois Botões de Ação Imediata -->
+    <div class="grid grid-cols-2 gap-2.5 mt-0.5">
+      <!-- Ação 1: Galeria/Arquivos -->
+      <label for="fileInput" class="group flex flex-col items-center justify-center gap-1.5 p-3.5 bg-slate-950/50 hover:bg-slate-800/60 border border-dashed border-slate-700/80 hover:border-sky-400 rounded-xl cursor-pointer transition-all duration-200">
+        <div class="p-2 rounded-lg bg-slate-800/80 group-hover:bg-sky-500/20 text-sky-400 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+          </svg>
+        </div>
+        <span class="text-xs font-medium text-slate-300 group-hover:text-white">Galeria / Vídeo</span>
+      </label>
+      <input id="fileInput" type="file" accept="image/*,video/*" class="hidden">
+
+      <!-- Ação 2: Tirar Foto Imediata (Abre Visor ao Vivo com fallback) -->
+      <button id="btnOpenCamera" type="button" class="group flex flex-col items-center justify-center gap-1.5 p-3.5 bg-slate-950/50 hover:bg-slate-800/60 border border-dashed border-slate-700/80 hover:border-emerald-400 rounded-xl cursor-pointer transition-all duration-200 text-left">
+        <div class="p-2 rounded-lg bg-slate-800/80 group-hover:bg-emerald-500/20 text-emerald-400 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          </svg>
+        </div>
+        <span class="text-xs font-medium text-slate-300 group-hover:text-white">Tirar Foto</span>
+      </button>
+      <input id="cameraInput" type="file" accept="image/*" capture="environment" class="hidden">
+    </div>
+
+    <!-- Miniatura de Prévia e Identificação do Arquivo -->
+    <div id="previewCard" class="hidden items-center gap-2.5 bg-slate-950/60 border border-slate-800 rounded-xl p-2 text-left">
+      <div id="mediaThumbWrap" class="w-10 h-10 rounded-lg overflow-hidden bg-slate-800 flex-shrink-0 flex items-center justify-center text-slate-400 text-xs">
+        <!-- Injetado dinamicamente -->
+      </div>
+      <div class="overflow-hidden flex-1">
+        <p id="selectedFileName" class="text-xs font-medium text-slate-200 truncate">arquivo.jpg</p>
+        <p id="selectedFileSize" class="text-[10px] text-slate-500">0 KB</p>
+      </div>
+    </div>
+
+    <!-- Barra de Progresso Visual Sempre Posicionada -->
+    <section id="progressContainer" class="bg-slate-950/70 border border-slate-800/80 rounded-xl p-2.5 text-left transition-all">
+      <div class="flex justify-between items-center text-[11px] mb-1.5 font-medium">
+        <span id="progressStatus" class="text-sky-300">Aguardando arquivo...</span>
+        <span id="progressPercent" class="text-slate-400 font-mono">0%</span>
+      </div>
+      <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+        <div id="progressBar" class="h-full bg-gradient-to-r from-sky-500 to-emerald-400 w-0 transition-all duration-300 rounded-full"></div>
+      </div>
+    </section>
+
+    <!-- Caixa de Link Diretamente Embaixo da Barra de Carregamento -->
+    <section id="resultBox" class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 text-left transition-all">
+      <div class="flex items-center justify-between text-[11px] font-bold text-slate-300 uppercase tracking-wide">
+        <div class="flex items-center gap-1.5 text-emerald-400">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+          </svg>
+          <span id="resultLabel">Link Público do Drive:</span>
+        </div>
+        <span id="statusBadge" class="text-[10px] font-normal text-slate-500 lowercase">aguardando</span>
+      </div>
+      <div class="flex gap-1.5 mt-2">
+        <input id="shareUrl" type="text" readonly placeholder="O link gerado aparecerá aqui..." class="flex-1 bg-slate-900/90 border border-slate-700/80 text-emerald-300 placeholder-slate-600 rounded-lg px-2.5 py-1.5 text-xs font-mono select-all focus:outline-none">
+        <button id="btnCopy" type="button" disabled class="px-3 py-1.5 bg-slate-800 text-slate-500 font-semibold text-xs rounded-lg transition-all flex items-center justify-center gap-1 min-w-[70px] cursor-not-allowed">
+          <span>Copiar</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Indicador de Status / Feedback Auxiliar -->
+    <footer class="min-h-[14px]">
+      <p id="statusFeedback" class="text-[11px] text-slate-400 text-center truncate"></p>
+    </footer>
+  </main>
+
   <script>
-    // =========================================================================
-    // COLE AQUI SUA URL DO APPS SCRIPT (Ela DEVE terminar em /exec)
-    // =========================================================================
+    // URL de Produção do seu Google Apps Script (Cole aqui a sua URL que termina com /exec)
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzNN7dXLIUIkluMZktduJ1CBijA3WrXjnoYauv1GuuODrd7m8kySbu2WtIPBD4RrnvYYg/exec";
 
+    // Elementos DOM
     const fileInput = document.getElementById('fileInput');
-    const labelTxt = document.getElementById('labelTxt');
-    const btnUpload = document.getElementById('btnUpload');
-    const statusText = document.getElementById('status');
+    const cameraInput = document.getElementById('cameraInput');
+    const btnOpenCamera = document.getElementById('btnOpenCamera');
+    const previewCard = document.getElementById('previewCard');
+    const mediaThumbWrap = document.getElementById('mediaThumbWrap');
+    const selectedFileName = document.getElementById('selectedFileName');
+    const selectedFileSize = document.getElementById('selectedFileSize');
+
+    const progressContainer = document.getElementById('progressContainer');
+    const progressStatus = document.getElementById('progressStatus');
+    const progressPercent = document.getElementById('progressPercent');
+    const progressBar = document.getElementById('progressBar');
+
     const resultBox = document.getElementById('resultBox');
     const shareUrl = document.getElementById('shareUrl');
     const btnCopy = document.getElementById('btnCopy');
+    const resultLabel = document.getElementById('resultLabel');
+    const statusBadge = document.getElementById('statusBadge');
+    const statusFeedback = document.getElementById('statusFeedback');
 
-    const progressContainer = document.getElementById('progressContainer');
-    const progressBar = document.getElementById('progressBar');
-    const progressStatus = document.getElementById('progressStatus');
-    const progressPercent = document.getElementById('progressPercent');
+    const toastBox = document.getElementById('toastBox');
+    const toastMsg = document.getElementById('toastMsg');
+    const toastIcon = document.getElementById('toastIcon');
 
-    let selectedFile = null;
+    // Elementos da Câmera Ao Vivo
+    const cameraModal = document.getElementById('cameraModal');
+    const videoCameraLive = document.getElementById('videoCameraLive');
+    const snapshotCanvas = document.getElementById('snapshotCanvas');
+    const btnCloseCamera = document.getElementById('btnCloseCamera');
+    const btnFlipCamera = document.getElementById('btnFlipCamera');
+    const btnCapturePhoto = document.getElementById('btnCapturePhoto');
+    const shutterFlash = document.getElementById('shutterFlash');
 
-    fileInput.addEventListener('change', (e) => {
-      if (e.target.files.length > 0) {
-        selectedFile = e.target.files[0];
-        
-        if (selectedFile.size > 45 * 1024 * 1024) {
-          alert("O arquivo é muito grande. O limite máximo é de 45 MB.");
-          fileInput.value = "";
-          selectedFile = null;
-          labelTxt.textContent = "Toque para selecionar da galeria ou câmera";
-          btnUpload.disabled = true;
-          return;
-        }
+    let activeStream = null;
+    let currentFacingMode = 'environment';
 
-        labelTxt.textContent = "Selecionado: " + selectedFile.name;
-        btnUpload.disabled = false;
-        resultBox.style.display = "none";
-        progressContainer.style.display = "none";
-        statusText.textContent = "";
-      }
-    });
+    function showToast(message, type = "warning") {
+      toastMsg.textContent = message;
+      toastIcon.textContent = type === "success" ? "✅" : (type === "info" ? "ℹ️" : "⚠️");
+      toastBox.classList.remove('opacity-0', '-translate-y-12', 'pointer-events-none');
+      toastBox.classList.add('opacity-100', 'translate-y-0');
+      
+      setTimeout(() => {
+        toastBox.classList.remove('opacity-100', 'translate-y-0');
+        toastBox.classList.add('opacity-0', '-translate-y-12', 'pointer-events-none');
+      }, 3500);
+    }
+
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
 
     function setProgress(pct, msg) {
       progressBar.style.width = pct + "%";
@@ -240,88 +249,242 @@
       if (msg) progressStatus.textContent = msg;
     }
 
-    btnUpload.addEventListener('click', () => {
-      if (!selectedFile) return;
+    // Inicialização e Controle do Visor de Câmera
+    btnOpenCamera.addEventListener('click', () => {
+      startLiveCamera();
+    });
 
-      btnUpload.disabled = true;
-      resultBox.style.display = "none";
-      progressContainer.style.display = "block";
-      setProgress(15, "Lendo arquivo local...");
+    async function startLiveCamera() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        cameraInput.click();
+        return;
+      }
 
+      try {
+        if (activeStream) {
+          stopLiveCamera();
+        }
+
+        const constraints = {
+          video: {
+            facingMode: { ideal: currentFacingMode },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
+          },
+          audio: false
+        };
+
+        activeStream = await navigator.mediaDevices.getUserMedia(constraints);
+        videoCameraLive.srcObject = activeStream;
+        await videoCameraLive.play();
+
+        cameraModal.classList.remove('hidden');
+        cameraModal.classList.add('flex');
+      } catch (err) {
+        console.warn("Acesso direto indisponível, usando fallback:", err);
+        showToast("Abrindo câmera nativa...", "info");
+        cameraInput.click();
+      }
+    }
+
+    function stopLiveCamera() {
+      if (activeStream) {
+        activeStream.getTracks().forEach(track => track.stop());
+        activeStream = null;
+      }
+      videoCameraLive.srcObject = null;
+      cameraModal.classList.remove('flex');
+      cameraModal.classList.add('hidden');
+    }
+
+    btnCloseCamera.addEventListener('click', stopLiveCamera);
+
+    btnFlipCamera.addEventListener('click', () => {
+      currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+      startLiveCamera();
+    });
+
+    btnCapturePhoto.addEventListener('click', () => {
+      if (!videoCameraLive.videoWidth) return;
+
+      shutterFlash.classList.remove('opacity-0');
+      shutterFlash.classList.add('opacity-100');
+      setTimeout(() => {
+        shutterFlash.classList.remove('opacity-100');
+        shutterFlash.classList.add('opacity-0');
+      }, 150);
+
+      snapshotCanvas.width = videoCameraLive.videoWidth;
+      snapshotCanvas.height = videoCameraLive.videoHeight;
+      const ctx = snapshotCanvas.getContext('2d');
+      ctx.drawImage(videoCameraLive, 0, 0, snapshotCanvas.width, snapshotCanvas.height);
+
+      snapshotCanvas.toBlob((blob) => {
+        stopLiveCamera();
+        if (blob) {
+          const photoFile = new File([blob], `foto_${Date.now()}.jpg`, { type: 'image/jpeg' });
+          handleIncomingFiles([photoFile]);
+        }
+      }, 'image/jpeg', 0.92);
+    });
+
+    fileInput.addEventListener('change', (e) => handleIncomingFiles(e.target.files));
+    cameraInput.addEventListener('change', (e) => handleIncomingFiles(e.target.files));
+
+    function handleIncomingFiles(files) {
+      if (!files || files.length === 0) return;
+      const file = files[0];
+
+      const MAX_SIZE_MB = 45;
+      if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+        showToast(`O arquivo excede o limite de ${MAX_SIZE_MB} MB.`, "warning");
+        return;
+      }
+
+      selectedFileName.textContent = file.name || "captura_camera.jpg";
+      selectedFileSize.textContent = formatBytes(file.size);
+      
+      mediaThumbWrap.innerHTML = '';
+      if (file.type.startsWith('image/')) {
+        const img = document.createElement('img');
+        img.className = 'w-full h-full object-cover';
+        img.src = URL.createObjectURL(file);
+        mediaThumbWrap.appendChild(img);
+      } else {
+        mediaThumbWrap.innerHTML = `<svg class="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>`;
+      }
+      previewCard.classList.remove('hidden');
+      previewCard.classList.add('flex');
+
+      startDirectUpload(file);
+    }
+
+    function startDirectUpload(file) {
+      shareUrl.value = "";
+      btnCopy.disabled = true;
+      btnCopy.className = "px-3 py-1.5 bg-slate-800 text-slate-500 font-semibold text-xs rounded-lg transition-all flex items-center justify-center gap-1 min-w-[70px] cursor-not-allowed";
+      statusBadge.textContent = "enviando...";
+      statusBadge.className = "text-[10px] font-normal text-sky-400 animate-pulse lowercase";
+      statusFeedback.textContent = "";
+
+      // Verifica se a URL real do Apps Script foi configurada
+      if (!SCRIPT_URL || SCRIPT_URL === "SUA_URL_DO_APPS_SCRIPT_AQUI") {
+        setProgress(0, "Configuração pendente");
+        statusBadge.textContent = "configurar";
+        statusBadge.className = "text-[10px] font-bold text-amber-400 lowercase";
+        showToast("Cole a URL do seu Apps Script (/exec) no código index.html", "warning");
+        statusFeedback.textContent = "Substitua SUA_URL_DO_APPS_SCRIPT_AQUI no código.";
+        return;
+      }
+
+      setProgress(10, "Lendo dados...");
       const reader = new FileReader();
 
       reader.onload = async () => {
-        setProgress(40, "Enviando para o Google Drive...");
+        setProgress(35, "Enviando ao Drive...");
 
-        const rawBase64 = reader.result.toString();
-        const base64Data = rawBase64.indexOf(',') > -1 ? rawBase64.split(',')[1] : rawBase64;
+        const rawResult = reader.result.toString();
+        const base64Data = rawResult.indexOf(',') > -1 ? rawResult.split(',')[1] : rawResult;
 
         const payload = {
-          fileName: selectedFile.name,
-          mimeType: selectedFile.type || "application/octet-stream",
+          fileName: file.name || ("upload_" + Date.now() + ".jpg"),
+          mimeType: file.type || "application/octet-stream",
           base64Data: base64Data
         };
 
-        // Simula progresso intermediário enquanto o Drive processa
-        let fakeProgress = 40;
-        const progressInterval = setInterval(() => {
-          if (fakeProgress < 90) {
-            fakeProgress += 5;
-            setProgress(fakeProgress, "Processando no Drive...");
+        let currentPct = 35;
+        const uploadTicker = setInterval(() => {
+          if (currentPct < 90) {
+            currentPct += 4;
+            setProgress(currentPct, "Gravando no Drive...");
           }
-        }, 500);
+        }, 350);
 
         try {
           const response = await fetch(SCRIPT_URL, {
             method: 'POST',
             body: JSON.stringify(payload)
           });
-          
-          clearInterval(progressInterval);
 
+          clearInterval(uploadTicker);
           const rawText = await response.text();
-          let result;
+          let json;
 
           try {
-            result = JSON.parse(rawText);
-          } catch (e) {
-            throw new Error("O Google retornou uma resposta inesperada. Verifique se as permissões estão como 'Qualquer pessoa'. Resposta: " + rawText.substring(0, 80));
+            json = JSON.parse(rawText);
+          } catch (err) {
+            throw new Error("Resposta inesperada do Google. Certifique-se de implantar como 'Qualquer pessoa'.");
           }
 
-          if (result.status === 'success') {
+          if (json.status === 'success') {
             setProgress(100, "Concluído!");
-            shareUrl.value = result.fileUrl;
-            resultBox.style.display = "block";
-            statusText.textContent = "";
+            shareUrl.value = json.fileUrl;
+            enableCopyButton();
+            statusBadge.textContent = "pronto";
+            statusBadge.className = "text-[10px] font-bold text-emerald-400 lowercase";
+            statusFeedback.textContent = "Arquivo salvo e público no Google Drive!";
           } else {
-            setProgress(0, "Falhou.");
-            statusText.textContent = "Erro retornado: " + result.message;
-            btnUpload.disabled = false;
+            setProgress(0, "Falha");
+            statusBadge.textContent = "erro";
+            statusBadge.className = "text-[10px] font-bold text-rose-400 lowercase";
+            showToast("Erro do script: " + json.message, "warning");
+            statusFeedback.textContent = "Falha no salvamento.";
           }
         } catch (error) {
-          clearInterval(progressInterval);
-          setProgress(0, "Erro");
-          statusText.textContent = error.message;
-          btnUpload.disabled = false;
+          clearInterval(uploadTicker);
+          setProgress(0, "Erro de rede");
+          statusBadge.textContent = "erro";
+          statusBadge.className = "text-[10px] font-bold text-rose-400 lowercase";
+          showToast(error.message, "warning");
+          statusFeedback.textContent = "Falha na conexão.";
         }
       };
 
       reader.onerror = () => {
         setProgress(0, "Erro");
-        statusText.textContent = "Falha ao ler o arquivo no celular.";
-        btnUpload.disabled = false;
+        statusBadge.textContent = "erro";
+        statusBadge.className = "text-[10px] font-bold text-rose-400 lowercase";
+        showToast("Falha ao ler o arquivo no dispositivo.", "warning");
       };
 
-      reader.readAsDataURL(selectedFile);
-    });
+      reader.readAsDataURL(file);
+    }
+
+    function enableCopyButton() {
+      btnCopy.disabled = false;
+      btnCopy.className = "px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-semibold text-xs rounded-lg transition-all flex items-center justify-center gap-1 min-w-[70px] cursor-pointer shadow-md";
+    }
 
     btnCopy.addEventListener('click', () => {
+      if (!shareUrl.value) return;
       shareUrl.select();
-      navigator.clipboard.writeText(shareUrl.value).then(() => {
-        btnCopy.textContent = "Copiado!";
-        setTimeout(() => { btnCopy.textContent = "Copiar"; }, 2000);
-      });
+      shareUrl.setSelectionRange(0, 99999);
+      let copied = false;
+
+      try {
+        copied = document.execCommand('copy');
+      } catch (err) {
+        copied = false;
+      }
+
+      if (!copied && navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(shareUrl.value).then(() => {
+          showCopySuccess();
+        });
+      } else {
+        showCopySuccess();
+      }
     });
+
+    function showCopySuccess() {
+      const originalText = btnCopy.textContent;
+      btnCopy.textContent = "Copiado!";
+      btnCopy.classList.replace('bg-emerald-600', 'bg-sky-600');
+      setTimeout(() => {
+        btnCopy.textContent = originalText;
+        btnCopy.classList.replace('bg-sky-600', 'bg-emerald-600');
+      }, 2000);
+    }
   </script>
 </body>
 </html>
